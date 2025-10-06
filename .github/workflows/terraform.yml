@@ -1,49 +1,32 @@
-name: Terraform EKS Deployment
+name: terraform CI CD pipeline
+run-name: ${{ github.actor }} has triggered the pipeline.
 
 on:
   push:
     branches:
       - main
-  pull_request:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 jobs:
-  terraform:
-    name: Terraform Apply
+  build-infra:
+    name: Build Infrastructure
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout your repository
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Setup Terraform
+        uses: actions/checkout@v3
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.8.0  # Change this to match your Terraform version
-
-      # Step 3: Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-east-1  # Change this to your AWS region
-
-      # Step 4: Terraform Init
-      - name: Terraform Init
+      - name: Install Terraform
+        id: init
         run: terraform init
-
-      # Step 5: Terraform Validate
-        # Optional but good to have — checks syntax before applying
-      - name: Terraform Validate
+      - name: validate
+        id: validate
         run: terraform validate
-
-      # Step 6: Terraform Plan
-      - name: Terraform Plan
+      - name: Plan
+        id: plan
         run: terraform plan
-
-      # Step 7: Terraform Apply (only runs on main branch)
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve
+      - name: Apply
+        run: terraform apply --auto-approve
